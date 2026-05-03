@@ -23,6 +23,7 @@ APP="build/MacShelf.app"
 
 echo ">> Packaging $APP..."
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+cp assets/MacShelf.icns "$APP/Contents/Resources/MacShelf.icns"
 cp "$BIN" "$APP/Contents/MacOS/MacShelf"
 
 cp Sources/MacShelf/Resources/Info.plist "$APP/Contents/Info.plist"
@@ -30,6 +31,8 @@ cp Sources/MacShelf/Resources/Info.plist "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.macshelf.app" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleName MacShelf" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName MacShelf" "$APP/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleIconFile MacShelf.icns" "$APP/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleIconName AppIcon" "$APP/Contents/Info.plist"
 
 # Carry over generated SwiftPM resource bundles so SwiftUI/Xcassets work.
 for bundle in .build/arm64-apple-macosx/debug/*.bundle; do

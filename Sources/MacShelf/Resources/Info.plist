@@ -8,6 +8,10 @@
 	<string>MacShelf</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIconFile</key>
+	<string>MacShelf.icns</string>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.macshelf.app</string>
 	<key>CFBundleInfoDictionaryVersion</key>

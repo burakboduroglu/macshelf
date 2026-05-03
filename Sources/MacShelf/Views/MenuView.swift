@@ -245,6 +245,11 @@ struct MenuView: View {
                 .foregroundStyle(.secondary)
             Spacer()
             Menu {
+
+                Button("Check for Updates...") {
+                    Task { await UpdateService.checkForUpdates() }
+                }
+                Divider()
                 Button("Clear history...") {
                     monitor.clearAll()
                 }

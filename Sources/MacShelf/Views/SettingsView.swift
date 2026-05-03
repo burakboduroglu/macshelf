@@ -43,6 +43,14 @@ private struct GeneralTab: View {
             Divider()
 
             HStack {
+                Text("Check for updates")
+                Spacer()
+                Button("Check...") {
+                    Task { await UpdateService.checkForUpdates() }
+                }
+            }
+
+            HStack {
                 Text("Clear all history")
                 Spacer()
                 Button("Clear...", role: .destructive) {

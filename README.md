@@ -93,6 +93,15 @@ Settings are available from the footer menu. From there you can change the
 history limit, record a different hotkey, check Accessibility status, and open
 System Settings.
 
+## Updates
+
+MacShelf includes a manual update checker. Use **Check for Updates...** from the
+menu bar footer or the Settings window to compare your installed version with the
+latest GitHub Release. If a newer release is available, MacShelf downloads the release DMG and opens the installer window.
+
+MacShelf does not silently replace itself yet. A future release may move to Sparkle
+for signed and notarized in-app updates.
+
 ## Privacy
 
 MacShelf skips pasteboard entries marked with:
