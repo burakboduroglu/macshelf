@@ -1,0 +1,64 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="glass" x1="157" y1="78" x2="884" y2="920" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FAFBFA"/>
+      <stop offset="0.5" stop-color="#E9EEEE"/>
+      <stop offset="1" stop-color="#D5E0DF"/>
+    </linearGradient>
+    <linearGradient id="board" x1="233" y1="168" x2="806" y2="891" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#606770"/>
+      <stop offset="1" stop-color="#252A30"/>
+    </linearGradient>
+    <linearGradient id="teal" x1="286" y1="626" x2="742" y2="842" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#63CDC5"/>
+      <stop offset="1" stop-color="#248E8B"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="310" y1="246" x2="720" y2="731" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFDF8"/>
+      <stop offset="1" stop-color="#F0ECE4"/>
+    </linearGradient>
+    <linearGradient id="clip" x1="392" y1="101" x2="649" y2="251" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FAF8F3"/>
+      <stop offset="0.5" stop-color="#9E9B95"/>
+      <stop offset="1" stop-color="#E1DDD5"/>
+    </linearGradient>
+    <filter id="shadow" x="120" y="110" width="784" height="824" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#0B1216" flood-opacity="0.26"/>
+    </filter>
+    <filter id="soft" x="0" y="0" width="1024" height="1024" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#536062" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+
+  <rect x="56" y="38" width="912" height="936" rx="190" fill="url(#glass)" filter="url(#soft)"/>
+  <rect x="70" y="52" width="884" height="908" rx="178" stroke="#AEBBBC" stroke-width="10" opacity="0.7"/>
+
+  <g filter="url(#shadow)">
+    <rect x="216" y="168" width="592" height="706" rx="72" fill="url(#board)"/>
+    <rect x="236" y="189" width="552" height="666" rx="55" stroke="#737C84" stroke-width="9" opacity="0.35"/>
+
+    <rect x="284" y="612" width="456" height="186" rx="32" fill="url(#teal)"/>
+    <rect x="304" y="641" width="416" height="180" rx="29" fill="#B7C5C1" opacity="0.72"/>
+
+    <path d="M300 244H724C749 244 770 265 770 290V558C770 604 752 649 719 682L666 735C653 748 635 756 617 756H300C275 756 254 735 254 710V290C254 265 275 244 300 244Z" fill="url(#paper)"/>
+    <path d="M770 558C768 620 714 676 649 676C633 676 620 689 620 705C620 722 617 740 606 756H617C635 756 653 748 666 735L719 682C752 649 770 604 770 558Z" fill="#E5E0D7"/>
+    <path d="M620 705C620 689 633 676 649 676C693 676 731 651 751 614C720 665 681 704 620 705Z" fill="#F8F4EC"/>
+
+    <rect x="338" y="342" width="90" height="90" rx="20" fill="#55BFB7"/>
+    <rect x="463" y="354" width="232" height="30" rx="15" fill="#D1CECA"/>
+    <rect x="463" y="402" width="170" height="28" rx="14" fill="#D1CECA"/>
+
+    <rect x="338" y="480" width="202" height="112" rx="22" fill="#DDECEA"/>
+    <rect x="582" y="500" width="150" height="26" rx="13" fill="#B8C7C5"/>
+    <rect x="582" y="546" width="115" height="25" rx="12.5" fill="#B8C7C5"/>
+
+    <rect x="338" y="635" width="90" height="90" rx="20" fill="#E4E2E0"/>
+    <rect x="463" y="649" width="185" height="28" rx="14" fill="#D1CECA"/>
+    <rect x="463" y="695" width="138" height="26" rx="13" fill="#D1CECA"/>
+
+    <path d="M414 176H453C464 176 473 167 473 156C473 123 500 96 533 96C566 96 593 123 593 156C593 167 602 176 613 176H650C668 176 683 191 683 209V231C683 252 666 269 645 269H419C398 269 381 252 381 231V209C381 191 396 176 414 176Z" fill="url(#clip)"/>
+    <rect x="407" y="203" width="250" height="26" rx="8" fill="#F5F0E8" opacity="0.8"/>
+    <circle cx="533" cy="155" r="29" fill="#24282D"/>
+    <circle cx="533" cy="155" r="20" fill="#DEE0DE"/>
+  </g>
+</svg>
