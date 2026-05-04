@@ -37,6 +37,26 @@ items, previews text and images, and pastes directly into the active app.
 If Accessibility permission is not granted, MacShelf still copies the selected
 item to the clipboard, but it cannot trigger the paste shortcut automatically.
 
+## Install
+
+### Homebrew
+
+```bash
+brew tap burakboduroglu/macshelf
+brew install --cask macshelf
+```
+
+To upgrade later:
+
+```bash
+brew update
+brew upgrade --cask macshelf
+```
+
+### Direct Download
+
+Download the latest `MacShelf-<version>.dmg` from [GitHub Releases](https://github.com/burakboduroglu/macshelf/releases), open it, and drag `MacShelf.app` into Applications.
+
 ## Build
 
 This repository vendors
