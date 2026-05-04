@@ -183,3 +183,7 @@ Sources/MacShelf
 - `build/MacShelf.app` is ad-hoc signed by the local build script.
 - `dist/MacShelf-<version>.dmg` is suitable for GitHub Releases.
 - Distribution builds should be signed and notarized with your Apple Developer ID.
+
+## License
+
+MacShelf is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
