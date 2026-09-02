@@ -20,7 +20,12 @@ struct MenuView: View {
     @State private var hoveredID: UUID?
     @State private var previewID: UUID?
     @State private var isSpacePreviewing: Bool = false
+    @State private var copiedID: UUID?
+    @State private var copiedResetTask: Task<Void, Never>?
     @FocusState private var searchFocused: Bool
+
+    /// How long a row keeps its "Copied" badge after being clicked.
+    private let copiedFeedbackDuration: Duration = .seconds(2)
 
     init(closePopup: @escaping () -> Void) {
         self.closePopup = closePopup
@@ -99,7 +104,7 @@ struct MenuView: View {
             TextField("Search clipboard...", text: $searchText)
                 .textFieldStyle(.plain)
                 .focused($searchFocused)
-                .onSubmit { pasteSelected() }
+                .onSubmit { copySelected() }
             if !searchText.isEmpty {
                 Button {
                     searchText = ""
@@ -135,7 +140,8 @@ struct MenuView: View {
                         ItemRow(
                             item: item,
                             index: index,
-                            isHovered: hoveredID == item.id
+                            isSelected: selectedIndex == index,
+                            isCopied: copiedID == item.id
                         )
                         .id(item.id)
                         .onContinuousHover { phase in
@@ -155,14 +161,14 @@ struct MenuView: View {
                             }
                         }
                         .onTapGesture {
-                            paste(item)
+                            copy(item)
                         }
                         .contextMenu {
                             Button(item.isPinned ? "Unpin" : "Pin") {
                                 item.isPinned.toggle()
                             }
-                            Button(item.isImage ? "Copy without pasting" : "Copy without pasting") {
-                                PasteService.write(item)
+                            Button("Paste into frontmost app") {
+                                paste(item)
                             }
                             Divider()
                             Button("Delete", role: .destructive) {
@@ -184,16 +190,18 @@ struct MenuView: View {
             .background(KeyCaptureView(
                 onArrowDown: { moveSelection(by: 1); previewID = nil },
                 onArrowUp: { moveSelection(by: -1); previewID = nil },
-                onReturn: { pasteSelected() },
+                onReturn: { copySelected() },
                 onEscape: {
                     if previewID != nil { stopPreview() }
                     else if searchFocused { searchFocused = false }
                     else { closePopup() }
                 },
+                onDelete: { deleteSelected() },
+                hasSearchText: { !searchText.isEmpty },
                 onDigit: { digit in
                     if digit >= 1 && digit <= 9 && filtered.count >= digit {
                         selectedIndex = digit - 1
-                        pasteSelected()
+                        copySelected()
                     }
                 },
                 onSpace: { isDown in
@@ -281,9 +289,48 @@ struct MenuView: View {
         selectedIndex = max(0, min(count - 1, selectedIndex + delta))
     }
 
-    private func pasteSelected() {
+    private func copySelected() {
         guard filtered.indices.contains(selectedIndex) else { return }
-        paste(filtered[selectedIndex])
+        copy(filtered[selectedIndex])
+    }
+
+    /// Remove the row under the cursor. The `ids` change handler clamps
+    /// `selectedIndex`, so the cursor lands on the row that took its place.
+    private func deleteSelected() {
+        guard filtered.indices.contains(selectedIndex) else { return }
+        let item = filtered[selectedIndex]
+
+        if previewID == item.id { stopPreview() }
+        if copiedID == item.id {
+            copiedResetTask?.cancel()
+            copiedResetTask = nil
+            copiedID = nil
+        }
+        if hoveredID == item.id { hoveredID = nil }
+
+        monitor.delete(item)
+    }
+
+    /// Put the item on the pasteboard and leave the popover open, so several
+    /// items can be picked in one visit. Nothing closes, so the row confirms
+    /// itself for a moment instead.
+    ///
+    /// `PasteService.write` marks the pasteboard as auto-generated, which the
+    /// monitor skips — copying from here does not re-enter the history.
+    private func copy(_ item: ClipboardItem) {
+        PasteService.write(item)
+
+        copiedResetTask?.cancel()
+        withAnimation(.easeOut(duration: 0.15)) {
+            copiedID = item.id
+        }
+        copiedResetTask = Task { @MainActor in
+            try? await Task.sleep(for: copiedFeedbackDuration)
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.2)) {
+                copiedID = nil
+            }
+        }
     }
 
     private func paste(_ item: ClipboardItem) {
@@ -298,6 +345,10 @@ struct MenuView: View {
         hoveredID = nil
         previewID = nil
         isSpacePreviewing = false
+        // Otherwise a badge left over from last time greets the next opening.
+        copiedResetTask?.cancel()
+        copiedResetTask = nil
+        copiedID = nil
     }
 
     private func stopPreview() {
@@ -334,6 +385,10 @@ private struct KeyCaptureView: NSViewRepresentable {
     let onArrowUp: () -> Void
     let onReturn: () -> Void
     let onEscape: () -> Void
+    let onDelete: () -> Void
+    /// Whether the search box currently holds a query, so delete can tell
+    /// "correct my typo" apart from "remove this row".
+    let hasSearchText: () -> Bool
     let onDigit: (Int) -> Void
     let onSpace: (_ isDown: Bool) -> Bool
 
@@ -350,6 +405,13 @@ private struct KeyCaptureView: NSViewRepresentable {
     final class KeyView: NSView {
         var handler: KeyCaptureView?
         private var monitor: Any?
+
+        /// True while a text field owns the keyboard, i.e. the search box is
+        /// focused. AppKit routes field editing through a shared NSTextView.
+        private var isEditingText: Bool {
+            guard let responder = window?.firstResponder as? NSTextView else { return false }
+            return responder.isFieldEditor
+        }
 
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
@@ -381,6 +443,17 @@ private struct KeyCaptureView: NSViewRepresentable {
                     h.onReturn(); return nil
                 case 53:
                     h.onEscape(); return nil
+                case 51, 117:
+                    // The search field is first responder for as long as the
+                    // popover is open, so keying off focus alone would mean
+                    // delete never reached a row. Give the field the key only
+                    // when there is query text that backspace could plausibly
+                    // be aimed at; Cmd+Delete skips even that.
+                    if !cmd, self.isEditingText, h.hasSearchText() {
+                        return event
+                    }
+                    h.onDelete()
+                    return nil
                 default: break
                 }
 
