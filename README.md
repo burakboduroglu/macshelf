@@ -58,25 +58,24 @@ The design goal was restraint: it should feel like part of the system, not an ap
 ```bash
 brew tap burakboduroglu/macshelf
 brew install --cask macshelf
+xattr -dr com.apple.quarantine /Applications/MacShelf.app
 ```
 
-```bash
-brew update && brew upgrade --cask macshelf   # later
-```
-
-**Direct download** — grab `MacShelf-<version>.dmg` from [Releases](https://github.com/burakboduroglu/macshelf/releases), open it, drag `MacShelf.app` into Applications.
+**Direct download** — grab `MacShelf-<version>.dmg` from [Releases](https://github.com/burakboduroglu/macshelf/releases), open it, drag `MacShelf.app` into Applications, then run the same `xattr` line.
 
 Requires **macOS 14** or newer.
 
-> **Gatekeeper will refuse the first launch.** MacShelf is ad-hoc signed rather than notarized, so macOS reports that *"Apple could not verify MacShelf is free of malware"* and quits it — silently, with no crash log. Clear the quarantine flag once:
->
-> ```bash
-> xattr -dr com.apple.quarantine /Applications/MacShelf.app
-> ```
->
-> Or skip it at install time with `brew install --cask --no-quarantine macshelf`.
->
-> Notarizing properly needs an Apple Developer Program membership. Until that exists this step is unavoidable, and you should not take my word that the binary is safe — [build it yourself](#build) instead.
+### Why the third line
+
+MacShelf is ad-hoc signed. Notarizing needs a paid Apple Developer Program membership this project does not have, so macOS has nothing to check the app against.
+
+Skip that line and Gatekeeper refuses the first launch — *"Apple could not verify MacShelf is free of malware"* — and quits the app silently, with no crash log to explain why. Clearing the quarantine flag is what lets it run. `--no-quarantine` used to do this at install time; [Homebrew removed the flag](https://github.com/Homebrew/brew/issues/20755) and shipped no replacement.
+
+Running it is you deciding to trust this binary, so be clear about what that means: an unsigned build, from a personal tap, reviewed by nobody. If that is not a trade you want to make, [build it from source](#build) — same result, and it never touches Gatekeeper.
+
+Prefer clicking to typing? Launch the app, let it fail, then open **System Settings → Privacy & Security**, find the block about MacShelf and choose **Open Anyway**.
+
+> Homebrew [stopped supporting casks that fail Gatekeeper](https://github.com/Homebrew/brew/issues/20755) on 1 September 2026. That policy governs the official cask repository; this is a personal tap and still installs. Treat Homebrew here as a convenience that may not last, not a guarantee.
 
 > **Accessibility is optional.** MacShelf copies to the clipboard without it. Grant it only if you want *Paste into frontmost app*, which synthesises `Cmd+V` — that one action needs the permission, nothing else does.
 
