@@ -8,14 +8,27 @@ import UniformTypeIdentifiers
 /// Polls `NSPasteboard.general` for changes and persists new entries.
 ///
 /// macOS provides no notification for pasteboard mutations; the supported
-/// pattern is to compare `changeCount` periodically. We poll every 0.5 s,
-/// which is the value used by Maccy and similar tools and is effectively
-/// invisible in CPU profiles.
+/// pattern is to compare `changeCount` periodically. Polling can only ever see
+/// the last value of a burst — copying ten things in half a second records
+/// whichever ones happened to be on the pasteboard at a tick — so the interval
+/// trades captured history against wakeups. Comparing `changeCount` is a cheap
+/// integer read and stays invisible in CPU profiles at this rate.
 @MainActor
 @Observable
 final class ClipboardMonitor {
     /// How often to poll the pasteboard.
-    private let pollInterval: TimeInterval = 0.5
+    private let pollInterval: TimeInterval = 0.25
+
+    /// Longest text we will persist.
+    ///
+    /// A clipboard manager is a history, not an archive. Past roughly this size
+    /// an entry stops being a useful row and starts being a database that never
+    /// shrinks: `text` has no `.externalStorage`, so it lands inline in SQLite,
+    /// and deleting it later only moves its pages to the free list.
+    private let maxTextLength = 256_000
+
+    /// Largest image we will persist, as PNG bytes.
+    private let maxImageBytes = 16 * 1024 * 1024
 
     /// Maximum number of unpinned items kept in history. Pinned items always survive.
     var historyLimit: Int {
@@ -36,10 +49,27 @@ final class ClipboardMonitor {
         "com.dashlane.dashlanephonefinal"
     ]
 
+    /// Upper bound on remembered focus changes, so a pathological burst of app
+    /// switching between two ticks can't grow this without limit.
+    private let maxFrontmostCandidates = 16
+
     private let pasteboard = NSPasteboard.general
     private var lastChangeCount: Int
     private var timer: Timer?
+    private var frontmostObserver: NSObjectProtocol?
     private let modelContext: ModelContext
+
+    /// Bundle IDs that held focus at any point since the last tick, oldest
+    /// first.
+    ///
+    /// `changeCount` tells us the pasteboard changed *somewhere* in the last
+    /// interval, not when. Reading `frontmostApplication` at tick time
+    /// therefore credits the copy to whatever is focused now, which is both
+    /// wrong for attribution and unsafe for `ignoredBundleIDs`: copy a password
+    /// and switch windows before the next tick and the ignore check no longer
+    /// sees the password manager. Tracking every app focused during the window
+    /// lets us treat them all as candidates.
+    private var frontmostCandidates: [String] = []
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
@@ -48,6 +78,9 @@ final class ClipboardMonitor {
 
     func start() {
         guard timer == nil else { return }
+        observeFrontmostApp()
+        resetFrontmostCandidates()
+
         let timer = Timer(timeInterval: pollInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.tick()
@@ -61,11 +94,56 @@ final class ClipboardMonitor {
     func stop() {
         timer?.invalidate()
         timer = nil
+        if let frontmostObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(frontmostObserver)
+            self.frontmostObserver = nil
+        }
+    }
+
+    // MARK: - Frontmost app tracking
+
+    private func observeFrontmostApp() {
+        guard frontmostObserver == nil else { return }
+        frontmostObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] note in
+            guard
+                let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+                let bundleID = app.bundleIdentifier
+            else { return }
+            // Delivered on .main, so we are already on the main actor.
+            MainActor.assumeIsolated {
+                self?.noteFrontmost(bundleID)
+            }
+        }
+    }
+
+    private func noteFrontmost(_ bundleID: String) {
+        guard frontmostCandidates.last != bundleID else { return }
+        frontmostCandidates.append(bundleID)
+        if frontmostCandidates.count > maxFrontmostCandidates {
+            // Drop from the middle: the first entry is our best guess at who
+            // owned the pasteboard, and the last is the current app.
+            frontmostCandidates.remove(at: 1)
+        }
+    }
+
+    /// Begin a new observation window seeded with whoever holds focus now.
+    private func resetFrontmostCandidates() {
+        frontmostCandidates = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+            .map { [$0] } ?? []
     }
 
     // MARK: - Polling
 
     private func tick() {
+        let candidates = frontmostCandidates
+        // Every path below ends this observation window, including the early
+        // returns, so a skipped copy can't leak its candidates into the next one.
+        defer { resetFrontmostCandidates() }
+
         let current = pasteboard.changeCount
         guard current != lastChangeCount else { return }
         lastChangeCount = current
@@ -77,9 +155,14 @@ final class ClipboardMonitor {
         if types.contains(NSPasteboard.PasteboardType("org.nspasteboard.TransientType")) { return }
         if types.contains(NSPasteboard.PasteboardType("org.nspasteboard.AutoGeneratedType")) { return }
 
-        let frontApp = NSWorkspace.shared.frontmostApplication
-        let bundleID = frontApp?.bundleIdentifier
-        if let bundleID, ignoredBundleIDs.contains(bundleID) { return }
+        // Skip if an ignored app held focus at any point in the window, not
+        // just at this instant: we can't tell which of them owned the copy, so
+        // the safe reading is that any of them might have.
+        if candidates.contains(where: ignoredBundleIDs.contains) { return }
+
+        // The app focused at the start of the window is the likeliest source —
+        // you copy, then switch away.
+        let bundleID = candidates.first
 
         // Image takes priority over text: most image copies also include a
         // path/text fallback that we don't want to capture twice.
@@ -88,7 +171,10 @@ final class ClipboardMonitor {
             return
         }
 
-        if let text = pasteboard.string(forType: .string), !text.isEmpty {
+        // Whitespace-only copies render as "(empty)" in the list, which is a
+        // row the user can't identify or act on.
+        if let text = pasteboard.string(forType: .string),
+           !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             insertText(text, sourceBundleID: bundleID)
         }
     }
@@ -206,15 +292,21 @@ final class ClipboardMonitor {
 
     /// Insert a text entry only if the exact text is not already in history.
     private func insertText(_ text: String, sourceBundleID: String?) {
+        guard text.count <= maxTextLength else { return }
+
         let descriptor = FetchDescriptor<ClipboardItem>(
             predicate: #Predicate { $0.text == text && $0.imageData == nil }
         )
         if let matches = try? modelContext.fetch(descriptor),
            let existing = matches.first {
+            // Re-copying an entry makes it the most recent one. Leaving the
+            // original timestamp would strand the thing the user just used at
+            // the bottom of the list, where prune() reaches it first.
+            existing.createdAt = .now
             if existing.sourceBundleID == nil, sourceBundleID != nil {
                 existing.sourceBundleID = sourceBundleID
-                try? modelContext.save()
             }
+            try? modelContext.save()
             return
         }
 
@@ -226,6 +318,8 @@ final class ClipboardMonitor {
 
     /// Insert an image entry only if the PNG hash is not already in history.
     private func insertImage(data: Data, width: Int, height: Int, sourceBundleID: String?) {
+        guard data.count <= maxImageBytes else { return }
+
         let hash = sha256(data)
 
         let descriptor = FetchDescriptor<ClipboardItem>(
@@ -233,22 +327,18 @@ final class ClipboardMonitor {
         )
         if let matches = try? modelContext.fetch(descriptor),
            let existing = matches.first {
-            var changed = false
+            // Same reasoning as insertText: a re-copy is a fresh use.
+            existing.createdAt = .now
             if existing.sourceBundleID == nil, sourceBundleID != nil {
                 existing.sourceBundleID = sourceBundleID
-                changed = true
             }
             if existing.imageWidth == nil {
                 existing.imageWidth = width
-                changed = true
             }
             if existing.imageHeight == nil {
                 existing.imageHeight = height
-                changed = true
             }
-            if changed {
-                try? modelContext.save()
-            }
+            try? modelContext.save()
             return
         }
 
