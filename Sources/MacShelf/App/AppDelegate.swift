@@ -18,17 +18,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var popover: NSPopover?
 
     override init() {
+        // Both of these touch the store file directly, so they have to happen
+        // before ModelContainer opens it.
+        StoreService.prepare()
+        StoreService.compact()
+
         let schema = Schema([ClipboardItem.self])
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        let config = ModelConfiguration(schema: schema, url: StoreService.storeURL)
         let container: ModelContainer
         do {
             container = try ModelContainer(for: schema, configurations: [config])
         } catch {
             // Schema is incompatible with the on-disk store (e.g. after adding
-            // image fields). Wipe the default store and try again so the user
-            // doesn't have to hand-clean Application Support.
+            // image fields). Wipe the store and try again so the user doesn't
+            // have to hand-clean Application Support.
             NSLog("MacShelf: ModelContainer load failed (\(error)). Resetting store.")
-            Self.deleteDefaultStore()
+            StoreService.deleteStore()
             do {
                 container = try ModelContainer(for: schema, configurations: [config])
             } catch {
@@ -38,19 +43,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.modelContainer = container
         self.monitor = ClipboardMonitor(modelContext: ModelContext(container))
         super.init()
-    }
-
-    private static func deleteDefaultStore() {
-        let fm = FileManager.default
-        guard let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return }
-        let candidates = [
-            appSupport.appendingPathComponent("default.store"),
-            appSupport.appendingPathComponent("default.store-shm"),
-            appSupport.appendingPathComponent("default.store-wal")
-        ]
-        for url in candidates {
-            try? fm.removeItem(at: url)
-        }
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
