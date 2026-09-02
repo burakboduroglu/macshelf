@@ -22,6 +22,7 @@ BIN=".build/arm64-apple-macosx/debug/MacShelf"
 APP="build/MacShelf.app"
 
 echo ">> Packaging $APP..."
+rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp assets/MacShelf.icns "$APP/Contents/Resources/MacShelf.icns"
 cp "$BIN" "$APP/Contents/MacOS/MacShelf"
