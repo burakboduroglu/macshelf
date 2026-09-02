@@ -6,7 +6,9 @@ enum UpdateService {
     private static let repository = "burakboduroglu/macshelf"
     private static let latestReleaseAPI = URL(string: "https://api.github.com/repos/\(repository)/releases/latest")!
     private static let releasesPage = URL(string: "https://github.com/\(repository)/releases/latest")!
-    private static let fallbackVersion = "0.1.0"
+    /// Used only when the bundle carries no CFBundleShortVersionString, which
+    /// happens for `swift run` builds. Keep in step with Info.plist on release.
+    private static let fallbackVersion = "0.2.0"
 
     static func checkForUpdates() async {
         do {
