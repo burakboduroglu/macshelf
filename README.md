@@ -24,6 +24,12 @@
 
 macOS remembers exactly one thing you copied. MacShelf keeps the rest: a menu bar popover holding your recent text and images, searchable, navigable entirely from the keyboard, and closed again in a keystroke. It is a small native app — no Electron, no menu bar clutter, no account.
 
+<div align="center">
+  <img src="assets/screenshot-history.png" alt="The MacShelf popover showing eight clipboard entries with a search field and keyboard hints" width="360">
+  &nbsp;&nbsp;
+  <img src="assets/screenshot-copied.png" alt="A row confirming with a green Copied badge while the popover stays open" width="360">
+</div>
+
 ## What it is
 
 Press `Cmd+Shift+V` anywhere and a popover drops from the menu bar with your clipboard history. Type to filter it, walk it with the arrow keys, press Return to put an item back on the clipboard. The popover stays open while you work, so collecting three snippets is three keystrokes rather than three round trips.
