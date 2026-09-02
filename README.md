@@ -168,6 +168,14 @@ Sources/MacShelf/
 
 Every build, local and released, is ad-hoc signed — there is no Developer ID behind it yet, which is why Gatekeeper blocks the first launch. Signing and notarizing with an Apple Developer ID is the fix and is the next thing this project needs.
 
+## Contributing
+
+Bug reports and small, focused fixes are welcome; the app is deliberately narrow, so open an issue before building anything substantial.
+
+- [**Contributing guide**](CONTRIBUTING.md) — setup, layout, manual testing, commits, pull requests
+- [**Code of Conduct**](CODE_OF_CONDUCT.md) — how we treat each other here
+- [**Security policy**](SECURITY.md) — what the app touches, and how to report a vulnerability privately
+
 ## License
 
 Released under the [MIT License](LICENSE).
