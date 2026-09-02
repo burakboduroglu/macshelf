@@ -194,6 +194,7 @@ Bug reports and small, focused fixes are welcome; the app is deliberately narrow
 - [**Contributing guide**](CONTRIBUTING.md) — setup, layout, manual testing, commits, pull requests
 - [**Code of Conduct**](CODE_OF_CONDUCT.md) — how we treat each other here
 - [**Security policy**](SECURITY.md) — what the app touches, and how to report a vulnerability privately
+- [**Changelog**](CHANGELOG.md) — what changed in each release
 
 ## License
 
