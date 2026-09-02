@@ -62,6 +62,16 @@ brew update && brew upgrade --cask macshelf   # later
 
 Requires **macOS 14** or newer.
 
+> **Gatekeeper will refuse the first launch.** MacShelf is ad-hoc signed rather than notarized, so macOS reports that *"Apple could not verify MacShelf is free of malware"* and quits it — silently, with no crash log. Clear the quarantine flag once:
+>
+> ```bash
+> xattr -dr com.apple.quarantine /Applications/MacShelf.app
+> ```
+>
+> Or skip it at install time with `brew install --cask --no-quarantine macshelf`.
+>
+> Notarizing properly needs an Apple Developer Program membership. Until that exists this step is unavoidable, and you should not take my word that the binary is safe — [build it yourself](#build) instead.
+
 > **Accessibility is optional.** MacShelf copies to the clipboard without it. Grant it only if you want *Paste into frontmost app*, which synthesises `Cmd+V` — that one action needs the permission, nothing else does.
 
 ## Keyboard
@@ -151,7 +161,7 @@ Sources/MacShelf/
 
 **Check for Updates…** in the footer menu compares the installed version against the latest GitHub Release and, if there is a newer one, downloads its DMG and opens the installer. MacShelf never replaces itself silently; signed in-app updates through Sparkle are the intended next step.
 
-Local builds are ad-hoc signed. Anything distributed should be signed and notarized with an Apple Developer ID.
+Every build, local and released, is ad-hoc signed — there is no Developer ID behind it yet, which is why Gatekeeper blocks the first launch. Signing and notarizing with an Apple Developer ID is the fix and is the next thing this project needs.
 
 ## License
 
