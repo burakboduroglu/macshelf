@@ -70,7 +70,20 @@ Skip the command and Gatekeeper refuses the first launch — *"Apple could not v
 
 Running it is you deciding to trust this binary, so be clear about what that means: an unsigned build, reviewed by nobody. If that is not a trade you want to make, [build it from source](#build) — same result, and it never touches Gatekeeper.
 
+### If it still will not open
+
+macOS 26 tightened Gatekeeper, and on some machines clearing the quarantine flag is no longer enough on its own. Quit the app, then clear every extended attribute and re-sign it locally:
+
+```bash
+xattr -cr /Applications/MacShelf.app
+codesign --force --deep --sign - /Applications/MacShelf.app
+```
+
+The second line replaces the ad-hoc signature with one made on your own machine, which is what Gatekeeper is willing to accept for code you have decided to run.
+
 Prefer clicking to typing? Launch the app, let it fail, then open **System Settings → Privacy & Security**, find the block about MacShelf and choose **Open Anyway**.
+
+Still stuck? [Open an issue](https://github.com/burakboduroglu/macshelf/issues/new/choose) with your macOS version — this is the roughest edge in the project and the one most worth hearing about.
 
 ### Homebrew
 
