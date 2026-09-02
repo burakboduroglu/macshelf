@@ -8,6 +8,7 @@
 
 [**Download the latest release →**](https://github.com/burakboduroglu/macshelf/releases/latest)
 
+[![CI](https://img.shields.io/github/actions/workflow/status/burakboduroglu/macshelf/ci.yml?branch=main&label=ci&style=flat-square)](https://github.com/burakboduroglu/macshelf/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/burakboduroglu/macshelf?style=flat-square)](https://github.com/burakboduroglu/macshelf/releases)
 [![License](https://img.shields.io/github/license/burakboduroglu/macshelf?style=flat-square)](LICENSE)
 [![Last commit](https://img.shields.io/github/last-commit/burakboduroglu/macshelf?style=flat-square)](https://github.com/burakboduroglu/macshelf/commits)
