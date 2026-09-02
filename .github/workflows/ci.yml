@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build the app bundle
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show the toolchain
+        run: |
+          xcode-select -p
+          swift --version
+
+      # scripts/build.sh compiles and then assembles build/MacShelf.app. It
+      # needs full Xcode rather than the Command Line Tools: the @Model macro
+      # is expanded by libSwiftDataMacros.dylib, which only ships inside
+      # Xcode.app. The runner images have it selected already.
+      - name: Build
+        run: scripts/build.sh
+
+      - name: Verify the bundle
+        run: |
+          test -x build/MacShelf.app/Contents/MacOS/MacShelf
+          plutil -lint build/MacShelf.app/Contents/Info.plist
+          codesign --verify --deep --strict build/MacShelf.app
+          test -f build/MacShelf.app/Contents/Resources/MacShelf.icns
+
+      # A release DMG carries the version from Info.plist, so a bump that only
+      # lands in one place would ship a mislabelled build.
+      - name: Check the version is in step
+        run: |
+          plist=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Sources/MacShelf/Resources/Info.plist)
+          built=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" build/MacShelf.app/Contents/Info.plist)
+          echo "source=$plist bundle=$built"
+          test "$plist" = "$built"
