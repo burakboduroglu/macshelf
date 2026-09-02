@@ -10,12 +10,7 @@ let package = Package(
         .executable(name: "MacShelf", targets: ["MacShelf"])
     ],
     dependencies: [
-        // For development inside the agent sandbox we use a vendored copy of
-        // the package. Switch to the URL-based dependency below for normal
-        // checkouts:
-        //
-        //   .package(url: "https://github.com/sindresorhus/KeyboardShortcuts.git", from: "2.4.0")
-        .package(path: "Vendor/KeyboardShortcuts")
+        .package(url: "https://github.com/sindresorhus/KeyboardShortcuts.git", from: "2.4.0")
     ],
     targets: [
         .executableTarget(
