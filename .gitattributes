@@ -1,0 +1,6 @@
+# Keep line endings stable across editors and tooling.
+* text=auto eol=lf
+
+*.png binary
+*.icns binary
+*.svg text eol=lf
