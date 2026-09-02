@@ -4,7 +4,13 @@ import AppKit
 struct ItemRow: View {
     let item: ClipboardItem
     let index: Int
-    let isHovered: Bool
+    /// Where the cursor is, whether it got there by mouse or by arrow key.
+    /// Highlighting only on hover left keyboard navigation invisible: the list
+    /// scrolled but nothing showed which row was about to be acted on.
+    let isSelected: Bool
+    /// Shows the "Copied" confirmation. Selecting a row copies it without
+    /// closing the popover, so the row itself has to report what happened.
+    let isCopied: Bool
 
     var body: some View {
         HStack(spacing: 8) {
@@ -32,17 +38,10 @@ struct ItemRow: View {
 
             Spacer(minLength: 0)
 
-            if isHovered {
-                // Hint that holding space shows the preview, like Finder Quick Look.
-                Image(systemName: "space")
-                    .font(.system(size: 9, weight: .semibold))
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 2)
-                    .foregroundStyle(.secondary)
-                    .background(
-                        RoundedRectangle(cornerRadius: 3)
-                            .stroke(Color.secondary.opacity(0.4), lineWidth: 1)
-                    )
+            if isCopied {
+                copiedBadge
+            } else if isSelected {
+                spaceHint
             }
 
             if item.isPinned {
@@ -61,8 +60,36 @@ struct ItemRow: View {
     }
 
     private var rowBackground: Color {
-        if isHovered { return Color.primary.opacity(0.08) }
+        if isCopied { return Color.green.opacity(0.14) }
+        if isSelected { return Color.primary.opacity(0.08) }
         return Color.clear
+    }
+
+    /// Hint that holding space shows the preview, like Finder Quick Look.
+    private var spaceHint: some View {
+        Image(systemName: "space")
+            .font(.system(size: 9, weight: .semibold))
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .foregroundStyle(.secondary)
+            .background(
+                RoundedRectangle(cornerRadius: 3)
+                    .stroke(Color.secondary.opacity(0.4), lineWidth: 1)
+            )
+    }
+
+    private var copiedBadge: some View {
+        HStack(spacing: 3) {
+            Image(systemName: "checkmark")
+                .font(.system(size: 9, weight: .bold))
+            Text("Copied")
+                .font(.system(size: 10, weight: .semibold))
+        }
+        .foregroundStyle(.green)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(Capsule().fill(Color.green.opacity(0.18)))
+        .transition(.opacity.combined(with: .scale(scale: 0.9)))
     }
 
     private var indexBadge: some View {
