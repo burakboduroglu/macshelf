@@ -1,189 +1,162 @@
-<p align="center">
-  <img src="assets/macshelf-logo.svg" alt="MacShelf logo" width="180">
-</p>
+<div align="center">
 
-<h1 align="center">MacShelf</h1>
+<img src="assets/macshelf-logo.svg" alt="MacShelf logo" width="140">
 
-<p align="center">
-  A lightweight macOS clipboard manager for text and images.
-</p>
+# MacShelf
 
-<p align="center">
-  <strong>Menu bar access.</strong>
-  <strong>Searchable history.</strong>
-  <strong>Quick paste actions.</strong>
-</p>
+**A clipboard shelf that lives in the menu bar — text and images, searchable, keyboard-first.**
 
-## Overview
+[**Download the latest release →**](https://github.com/burakboduroglu/macshelf/releases/latest)
 
-MacShelf keeps clipboard history in the menu bar, lets you search previous
-items, previews text and images, and pastes directly into the active app.
+[![Release](https://img.shields.io/github/v/release/burakboduroglu/macshelf?style=flat-square)](https://github.com/burakboduroglu/macshelf/releases)
+[![License](https://img.shields.io/github/license/burakboduroglu/macshelf?style=flat-square)](LICENSE)
+[![Last commit](https://img.shields.io/github/last-commit/burakboduroglu/macshelf?style=flat-square)](https://github.com/burakboduroglu/macshelf/commits)
 
-## Features
+![Swift](https://img.shields.io/badge/Swift-6-000?style=flat-square&logo=swift)
+![SwiftUI](https://img.shields.io/badge/SwiftUI-AppKit-000?style=flat-square&logo=swift)
+![SwiftData](https://img.shields.io/badge/SwiftData-persistence-000?style=flat-square&logo=apple)
+![macOS](https://img.shields.io/badge/macOS-14+-000?style=flat-square&logo=apple)
+![Homebrew](https://img.shields.io/badge/Homebrew-cask-000?style=flat-square&logo=homebrew)
 
-- Text and image clipboard history
-- Menu bar popover with global hotkey support
-- Search and keyboard navigation
-- Quick paste with Return or number shortcuts
-- Image previews and compact history rows
-- Pin, unpin, delete, and clear entries
-- Duplicate suppression and self-write protection
-- Privacy filters for transient pasteboard items
+</div>
 
-## Requirements
+---
 
-- macOS 14 or newer
+macOS remembers exactly one thing you copied. MacShelf keeps the rest: a menu bar popover holding your recent text and images, searchable, navigable entirely from the keyboard, and closed again in a keystroke. It is a small native app — no Electron, no menu bar clutter, no account.
 
-If Accessibility permission is not granted, MacShelf still copies the selected
-item to the clipboard, but it cannot trigger the paste shortcut automatically.
+## What it is
+
+Press `Cmd+Shift+V` anywhere and a popover drops from the menu bar with your clipboard history. Type to filter it, walk it with the arrow keys, press Return to put an item back on the clipboard. The popover stays open while you work, so collecting three snippets is three keystrokes rather than three round trips.
+
+Items are text or image. Images are re-encoded to PNG, thumbnailed in the row, and deduplicated by content hash, so screenshotting the same window twice does not fill the list. Pin the ones you keep reaching for and they survive pruning.
+
+The design goal was restraint: it should feel like part of the system, not an app demanding attention. There is no Dock icon, no window, no onboarding.
+
+## Highlights
+
+|     | Feature | How it works |
+| --- | ------- | ------------ |
+| ⌨️ | **Keyboard-first** | Arrows move the cursor, `Return` copies, `⌫` deletes, `Space` previews. The mouse is optional throughout. |
+| 📋 | **Text and images** | Images decode from pasteboard types, file URLs and AppKit payloads, then normalise to PNG with dimensions and a SHA-256 hash. |
+| 🔁 | **Copy without closing** | Selecting a row copies it and confirms in place for two seconds, so several items can be collected in one visit. |
+| 🔒 | **Password managers stay out** | Honours the `nspasteboard.org` concealed / transient markers, and tracks which app held focus across the whole polling window rather than sampling it once. |
+| 📌 | **Pinning** | Pinned rows sort to the top and are never touched by history pruning. |
+| 🗜️ | **The store stays small** | Oversized copies are skipped, and dead SQLite pages are vacuumed at launch — a store bloated to 6.5 MB came back down to 475 KB. |
+| 🧭 | **Knows where it came from** | Each entry records the app that owned the copy, shown in the preview card. |
+| 🪶 | **Small** | A 3.8 MB app bundle over roughly 1,900 lines of Swift, with one third-party dependency. |
 
 ## Install
 
-### Homebrew
+**Homebrew** — the tap carries the cask:
 
 ```bash
 brew tap burakboduroglu/macshelf
 brew install --cask macshelf
 ```
 
-To upgrade later:
-
 ```bash
-brew update
-brew upgrade --cask macshelf
+brew update && brew upgrade --cask macshelf   # later
 ```
 
-### Direct Download
+**Direct download** — grab `MacShelf-<version>.dmg` from [Releases](https://github.com/burakboduroglu/macshelf/releases), open it, drag `MacShelf.app` into Applications.
 
-Download the latest `MacShelf-<version>.dmg` from [GitHub Releases](https://github.com/burakboduroglu/macshelf/releases), open it, and drag `MacShelf.app` into Applications.
+Requires **macOS 14** or newer.
+
+> **Accessibility is optional.** MacShelf copies to the clipboard without it. Grant it only if you want *Paste into frontmost app*, which synthesises `Cmd+V` — that one action needs the permission, nothing else does.
+
+## Keyboard
+
+| Key | Action |
+| --- | ------ |
+| `Cmd+Shift+V` | Show or hide the popover, from anywhere. Rebindable in Settings. |
+| `↑` `↓` | Move the cursor |
+| `Return` | Copy the selected item |
+| `Cmd+1` … `Cmd+9` | Copy by position |
+| `Space` *(hold)* | Preview the selected item |
+| `⌫` | Delete the selected item |
+| `Cmd+⌫` | Delete even while a search is typed |
+| `Esc` | Closes the preview, then the search, then the popover |
+| Right-click | Pin, paste into the frontmost app, delete |
+
+Typing anywhere filters the list — the search field always has focus, so there is nothing to click into first.
+
+## Stack
+
+**Swift 6** targeting **macOS 14**, built with SwiftPM. The UI is **SwiftUI** hosted inside **AppKit**: a `MenuBarExtra` cannot be opened programmatically, which a hotkey-driven app requires, so `AppDelegate` owns an `NSStatusItem` and an `NSPopover` directly. History lives in **SwiftData**, backed by SQLite.
+
+The only third-party dependency is [`KeyboardShortcuts`](https://github.com/sindresorhus/KeyboardShortcuts) for the recordable global hotkey.
 
 ## Build
 
-This repository vendors
-[`KeyboardShortcuts`](https://github.com/sindresorhus/KeyboardShortcuts) under
-`Vendor/KeyboardShortcuts`, so the app can be built without downloading SwiftPM
-dependencies.
-
-### Build a launchable app bundle
-
 ```bash
+git clone https://github.com/burakboduroglu/macshelf.git
+cd macshelf
 scripts/build.sh
 ```
 
-The script compiles the Swift package, creates `build/MacShelf.app`, copies the
-required app resources, and ad-hoc signs the bundle.
+| Script | What it does |
+| ------ | ------------ |
+| `scripts/build.sh` | Compiles, assembles `build/MacShelf.app`, ad-hoc signs it |
+| `scripts/build.sh --run` | Same, then relaunches the app |
+| `scripts/package-dmg.sh` | Writes `dist/MacShelf-<version>.dmg` with an `/Applications` shortcut |
+| `open Package.swift` | Opens the package in Xcode — pick the `MacShelf` scheme, run on *My Mac* |
 
-To relaunch after building:
+> **Xcode is required, not just the Command Line Tools.** The `@Model` macro compiles through `libSwiftDataMacros.dylib`, which ships inside `Xcode.app`; the CLT toolchain carries only three macro plugins and none of them is that one. Without Xcode the build fails at `Schema([ClipboardItem.self])`.
 
-```bash
-scripts/build.sh --run
-```
+`swift run MacShelf` produces a bare executable rather than a bundle, so the status item and resources are missing. Use `scripts/build.sh`.
 
-### Create a DMG
+## How it works
 
-```bash
-scripts/package-dmg.sh
-```
+`ClipboardMonitor` polls `NSPasteboard.general.changeCount` every 250 ms — macOS posts no notification for pasteboard changes, so comparing the counter is the supported approach. Polling can only ever see the last value of a burst, which is the one real limitation: copying ten things in half a second records a few of them, not all ten.
 
-The DMG is written to `dist/MacShelf-<version>.dmg` and includes an
-`/Applications` shortcut for drag-and-drop installation.
+**Attribution.** `changeCount` reports that the pasteboard moved *somewhere* in the last interval, never when. Reading `frontmostApplication` at poll time therefore credits whichever app happens to be focused by then. MacShelf instead watches `didActivateApplicationNotification` and keeps every app that held focus during the window: the ignore list is checked against all of them, and the entry is attributed to the first.
 
-### Open in Xcode
+**Deduplication.** Text matches exactly, images match on PNG hash. A repeat copy is not a new row — it moves the existing one to the top, so the thing you just used does not sit at the bottom waiting to be pruned.
 
-```bash
-open Package.swift
-```
+**Storage.** SwiftData writes to `~/Library/Application Support/MacShelf/MacShelf.store`. Text over 256,000 characters and images over 16 MB are skipped: `text` has no external storage, so a large copy lands inline in SQLite, and deleting it later only parks its pages on the free list. Those pages are reclaimed by an incremental vacuum and a WAL checkpoint at launch, before the store is opened.
 
-Select the `MacShelf` scheme and run on "My Mac".
-
-### About `swift run`
-
-`swift run MacShelf` launches a bare executable, not a proper `.app` bundle.
-For normal use, prefer `scripts/build.sh` or Xcode.
-
-## Usage
-
-1. Launch `build/MacShelf.app`.
-2. Open the popover from the menu bar or with `Cmd+Shift+V`.
-3. Search for a previous item or move through the list with the keyboard.
-4. Press Return, click an item, or use `Cmd+1` to `Cmd+9` to paste it.
-5. Hold Space to preview the hovered item.
-
-Settings are available from the footer menu. From there you can change the
-history limit, record a different hotkey, check Accessibility status, and open
-System Settings.
-
-## Updates
-
-MacShelf includes a manual update checker. Use **Check for Updates...** from the
-menu bar footer or the Settings window to compare your installed version with the
-latest GitHub Release. If a newer release is available, MacShelf downloads the release DMG and opens the installer window.
-
-MacShelf does not silently replace itself yet. A future release may move to Sparkle
-for signed and notarized in-app updates.
+**Pasting.** `PasteService` writes to the pasteboard and, when Accessibility is granted, posts a synthetic `Cmd+V` through `CGEvent`. Its own writes carry the auto-generated marker so they are never captured back into the history.
 
 ## Privacy
 
-MacShelf skips pasteboard entries marked with:
+Everything stays on the machine. There is no network call except the manual update check against the GitHub Releases API.
 
-- `org.nspasteboard.ConcealedType`
-- `org.nspasteboard.TransientType`
-- `org.nspasteboard.AutoGeneratedType`
+Copies are skipped when the pasteboard carries `org.nspasteboard.ConcealedType`, `org.nspasteboard.TransientType` or `org.nspasteboard.AutoGeneratedType` — the [nspasteboard.org](http://nspasteboard.org) convention that 1Password, Bitwarden and others set on secrets — or when a known password-manager bundle ID held focus while the copy happened.
 
-It also ignores a built-in list of known password-manager bundle IDs.
+## Project layout
 
-When MacShelf writes one of its own history items back to the clipboard, it
-marks the write as auto-generated so the same item is not captured again.
-
-## How It Works
-
-`ClipboardMonitor` polls `NSPasteboard.general.changeCount` every 500 ms.
-
-Text items are stored as exact strings in SwiftData. Image items are decoded
-from common pasteboard types, file URLs, and AppKit payloads, then stored as PNG
-data with dimensions and a SHA-256 hash.
-
-Duplicate handling is strict:
-
-- Same text: ignored
-- Same image hash: ignored
-- MacShelf's own pasteboard writes: ignored
-
-Pasting writes the selected item back to `NSPasteboard.general`. If Accessibility
-permission is granted, MacShelf also posts a synthetic `Cmd+V` with `CGEvent`.
-
-## Project Layout
-
-```text
-Sources/MacShelf
-  App/
-    MacShelfApp.swift        SwiftUI app entry and Settings scene
-    AppDelegate.swift        Status item, popover, hotkey, monitor lifecycle
-  Models/
-    ClipboardItem.swift      SwiftData model for text and image entries
-  Services/
-    ClipboardMonitor.swift   Pasteboard polling, decoding, dedupe, pruning
-    PasteService.swift       Pasteboard write and optional Cmd+V event
-    PermissionsService.swift Accessibility status and settings shortcut
-    HotkeyManager.swift      KeyboardShortcuts registration
-  Views/
-    MenuView.swift           Search, history list, key capture, preview state
-    ItemRow.swift            A single clipboard history row
-    DetailsCard.swift        Space preview card
-    SettingsView.swift       General, Shortcuts, Privacy tabs
-  Resources/
-    Info.plist
-    MacShelf.entitlements
-    Assets.xcassets
+```
+Sources/MacShelf/
+├─ App/
+│  ├─ MacShelfApp.swift        SwiftUI entry point and Settings scene
+│  └─ AppDelegate.swift        Status item, popover, hotkey, monitor lifecycle
+├─ Models/
+│  └─ ClipboardItem.swift      SwiftData model for text and image entries
+├─ Services/
+│  ├─ ClipboardMonitor.swift   Polling, decoding, dedupe, pruning
+│  ├─ StoreService.swift       Store location, migration, SQLite compaction
+│  ├─ PasteService.swift       Pasteboard writes and the synthetic Cmd+V
+│  ├─ PermissionsService.swift Accessibility trust check
+│  ├─ HotkeyManager.swift      Global shortcut registration
+│  └─ UpdateService.swift      Manual release check
+├─ Views/
+│  ├─ MenuView.swift           Search, list, key capture, preview state
+│  ├─ ItemRow.swift            A single history row
+│  ├─ DetailsCard.swift        The Space preview card
+│  └─ SettingsView.swift       General, Shortcuts and Privacy tabs
+└─ Resources/                  Info.plist, entitlements, asset catalog
 ```
 
-## Notes
+## Updates
 
-- MacShelf is a menu bar app and does not show a Dock icon.
-- `build/MacShelf.app` is ad-hoc signed by the local build script.
-- `dist/MacShelf-<version>.dmg` is suitable for GitHub Releases.
-- Distribution builds should be signed and notarized with your Apple Developer ID.
+**Check for Updates…** in the footer menu compares the installed version against the latest GitHub Release and, if there is a newer one, downloads its DMG and opens the installer. MacShelf never replaces itself silently; signed in-app updates through Sparkle are the intended next step.
+
+Local builds are ad-hoc signed. Anything distributed should be signed and notarized with an Apple Developer ID.
 
 ## License
 
-MacShelf is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+Released under the [MIT License](LICENSE).
+
+<div align="center">
+<sub>Built by <a href="https://github.com/burakboduroglu">Burak Boduroğlu</a></sub>
+</div>
