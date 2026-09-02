@@ -1,0 +1,40 @@
+name: Feature request
+description: Suggest something MacShelf should do
+title: 'feat: '
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        MacShelf is deliberately small: a menu bar popover, a history, a
+        keyboard. Proposals that keep it that way are the easiest to accept.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the situation you hit, not the solution you have in mind.
+      placeholder: I copy the same snippets every day and scrolling to them is slow…
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like it to do?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+      description: Including doing nothing, or an existing feature that nearly works.
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - label: This works without a Dock icon, a window, or an account
+        - label: This does not require sending clipboard contents anywhere

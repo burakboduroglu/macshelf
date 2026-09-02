@@ -1,0 +1,72 @@
+name: Bug report
+description: MacShelf is broken or behaves unexpectedly
+title: 'fix: '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please do **not** use this form for security
+        issues — see [SECURITY.md](https://github.com/burakboduroglu/macshelf/blob/main/SECURITY.md).
+
+        If the app quits the moment you launch it, that is almost certainly
+        Gatekeeper rather than a bug. MacShelf is ad-hoc signed, so you need
+        `xattr -dr com.apple.quarantine /Applications/MacShelf.app` once. The
+        [README](https://github.com/burakboduroglu/macshelf#install) explains why.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the problem, and what you expected instead.
+      placeholder: Copying from Notes records the entry as coming from Finder…
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1. Copy …
+        2. Open the popover with Cmd+Shift+V
+        3. See …
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: MacShelf version
+      description: From the footer menu, or `defaults read /Applications/MacShelf.app/Contents/Info CFBundleShortVersionString`.
+      placeholder: 0.2.0
+    validations:
+      required: true
+
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: 26.6.2 on Apple silicon
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: How did you install it?
+      options:
+        - Homebrew cask
+        - DMG from Releases
+        - Built from source
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: |
+        Screenshots help for anything visual. For a crash, attach the report
+        from Console → Crash Reports, or the output of
+        `log show --predicate 'process == "MacShelf"' --last 10m`.
