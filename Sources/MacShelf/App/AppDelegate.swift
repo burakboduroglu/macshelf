@@ -41,7 +41,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         self.modelContainer = container
-        self.monitor = ClipboardMonitor(modelContext: ModelContext(container))
+        // Share the container's main context with the views. A separate
+        // ModelContext would not have the objects SwiftUI hands back from
+        // @Query registered in it, so deleting one through the monitor
+        // silently did nothing.
+        self.monitor = ClipboardMonitor(modelContext: container.mainContext)
         super.init()
     }
 
