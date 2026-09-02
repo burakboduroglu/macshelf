@@ -98,6 +98,34 @@ something once slipped through it.
 
 Screenshots are required for anything visual.
 
+## Releasing
+
+Releases are cut from a tag; the `Release` workflow does the rest.
+
+1. Bump `CFBundleShortVersionString` in `Sources/MacShelf/Resources/Info.plist`.
+2. Move the `Unreleased` entries in `CHANGELOG.md` under a new
+   `## [x.y.z] - YYYY-MM-DD` heading and update the link definitions at the
+   bottom.
+3. Commit as `chore(release): bump version to x.y.z` and merge into `main`.
+4. Tag the merge commit and push it:
+
+   ```bash
+   git tag -a vx.y.z -m "vx.y.z"
+   git push origin vx.y.z
+   ```
+
+The workflow refuses the tag if it disagrees with `Info.plist` or if the
+changelog has no section for it. Otherwise it packages the DMG, checks that it
+mounts and that the app inside is signed, publishes a release with the
+changelog section as its notes, attaches the DMG and its checksum, and prints
+the `version` and `sha256` lines for the Homebrew cask into the run summary.
+Copy those into `Casks/macshelf.rb` in
+[`burakboduroglu/homebrew-macshelf`](https://github.com/burakboduroglu/homebrew-macshelf).
+
+`scripts/package-dmg.sh` builds the same DMG locally. A Mac with a Finder
+session also gets the styled window, which a CI runner cannot always produce —
+the pass gives up after its watchdog rather than hanging the build.
+
 ## Reporting bugs
 
 Use the [bug report form](https://github.com/burakboduroglu/macshelf/issues/new/choose)
