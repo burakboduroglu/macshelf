@@ -54,29 +54,34 @@ The design goal was restraint: it should feel like part of the system, not an ap
 
 ## Install
 
-**Homebrew** — the tap carries the cask:
+Grab the **[latest DMG](https://github.com/burakboduroglu/macshelf/releases/latest)**, open it, drag `MacShelf.app` into Applications, then run this once:
 
 ```bash
-brew tap burakboduroglu/macshelf
-brew install --cask macshelf
 xattr -dr com.apple.quarantine /Applications/MacShelf.app
 ```
 
-**Direct download** — grab `MacShelf-<version>.dmg` from [Releases](https://github.com/burakboduroglu/macshelf/releases), open it, drag `MacShelf.app` into Applications, then run the same `xattr` line.
-
 Requires **macOS 14** or newer.
 
-### Why the third line
+### Why that command
 
 MacShelf is ad-hoc signed. Notarizing needs a paid Apple Developer Program membership this project does not have, so macOS has nothing to check the app against.
 
-Skip that line and Gatekeeper refuses the first launch — *"Apple could not verify MacShelf is free of malware"* — and quits the app silently, with no crash log to explain why. Clearing the quarantine flag is what lets it run. `--no-quarantine` used to do this at install time; [Homebrew removed the flag](https://github.com/Homebrew/brew/issues/20755) and shipped no replacement.
+Skip the command and Gatekeeper refuses the first launch — *"Apple could not verify MacShelf is free of malware"* — and quits the app silently, with no crash log to explain why. Clearing the quarantine flag is what lets it run.
 
-Running it is you deciding to trust this binary, so be clear about what that means: an unsigned build, from a personal tap, reviewed by nobody. If that is not a trade you want to make, [build it from source](#build) — same result, and it never touches Gatekeeper.
+Running it is you deciding to trust this binary, so be clear about what that means: an unsigned build, reviewed by nobody. If that is not a trade you want to make, [build it from source](#build) — same result, and it never touches Gatekeeper.
 
 Prefer clicking to typing? Launch the app, let it fail, then open **System Settings → Privacy & Security**, find the block about MacShelf and choose **Open Anyway**.
 
-> Homebrew [stopped supporting casks that fail Gatekeeper](https://github.com/Homebrew/brew/issues/20755) on 1 September 2026. That policy governs the official cask repository; this is a personal tap and still installs. Treat Homebrew here as a convenience that may not last, not a guarantee.
+### Homebrew
+
+The tap still works, and needs the same command afterwards:
+
+```bash
+brew install burakboduroglu/macshelf/macshelf
+xattr -dr com.apple.quarantine /Applications/MacShelf.app
+```
+
+It is listed second on purpose. `--no-quarantine` used to fold that second line into the install; [Homebrew removed the flag](https://github.com/Homebrew/brew/issues/20755) with no replacement, and on 1 September 2026 stopped supporting casks that fail Gatekeeper. That policy governs the official cask repository and this is a personal tap, so it installs today — but the direction is clear enough that the DMG is the path worth relying on until there is a Developer ID behind the app.
 
 > **Accessibility is optional.** MacShelf copies to the clipboard without it. Grant it only if you want *Paste into frontmost app*, which synthesises `Cmd+V` — that one action needs the permission, nothing else does.
 
